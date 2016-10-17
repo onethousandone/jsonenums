@@ -75,21 +75,22 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/campoy/jsonenums/parser"
+	"github.com/onethousandone/jsonenums/parser"
 )
 
 var (
-	typeNames    = flag.String("type", "", "comma-separated list of type names; must be set")
-	outputPrefix = flag.String("prefix", "", "prefix to be added to the output file")
-	outputSuffix = flag.String("suffix", "_jsonenums", "suffix to be added to the output file")
+	typeName     = flag.String("type", "", "The name of the type to generate enums for")
+	outputPrefix = flag.String("prefix", "", "Prefix to be added to the output file")
+	outputSuffix = flag.String("suffix", "_jsonenums", "Suffix to be added to the output file")
+	typePrefix   = flag.String("type-prefix", "", "Strip this prefix off the type")
+	lowercase    = flag.Bool("lowercase", false, "Cast the type (or remainer afters stripping) to lowercase")
 )
 
 func main() {
 	flag.Parse()
-	if len(*typeNames) == 0 {
+	if len(*typeName) == 0 {
 		log.Fatalf("the flag -type must be set")
 	}
-	types := strings.Split(*typeNames, ",")
 
 	// Only one directory at a time can be processed, and the default is ".".
 	dir := "."
@@ -113,39 +114,40 @@ func main() {
 		Command        string
 		PackageName    string
 		TypesAndValues map[string][]string
+		ToLowerCase    bool
+		TypePrefix     string
 	}{
 		Command:        strings.Join(os.Args[1:], " "),
 		PackageName:    pkg.Name,
 		TypesAndValues: make(map[string][]string),
+		ToLowerCase:    *lowercase,
+		TypePrefix:     *typePrefix,
 	}
 
-	// Run generate for each type.
-	for _, typeName := range types {
-		values, err := pkg.ValuesOfType(typeName)
-		if err != nil {
-			log.Fatalf("finding values for type %v: %v", typeName, err)
-		}
-		analysis.TypesAndValues[typeName] = values
+	values, err := pkg.ValuesOfType(*typeName, *typePrefix, *lowercase)
+	if err != nil {
+		log.Fatalf("finding values for type %v: %v", *typeName, err)
+	}
+	analysis.TypesAndValues[*typeName] = values
 
-		var buf bytes.Buffer
-		if err := generatedTmpl.Execute(&buf, analysis); err != nil {
-			log.Fatalf("generating code: %v", err)
-		}
+	var buf bytes.Buffer
+	if err := generatedTmpl.Execute(&buf, analysis); err != nil {
+		log.Fatalf("generating code: %v", err)
+	}
 
-		src, err := format.Source(buf.Bytes())
-		if err != nil {
-			// Should never happen, but can arise when developing this code.
-			// The user can compile the output to see the error.
-			log.Printf("warning: internal error: invalid Go generated: %s", err)
-			log.Printf("warning: compile the package to analyze the error")
-			src = buf.Bytes()
-		}
+	src, err := format.Source(buf.Bytes())
+	if err != nil {
+		// Should never happen, but can arise when developing this code.
+		// The user can compile the output to see the error.
+		log.Printf("warning: internal error: invalid Go generated: %s", err)
+		log.Printf("warning: compile the package to analyze the error")
+		src = buf.Bytes()
+	}
 
-		output := strings.ToLower(*outputPrefix + typeName +
-			*outputSuffix + ".go")
-		outputPath := filepath.Join(dir, output)
-		if err := ioutil.WriteFile(outputPath, src, 0644); err != nil {
-			log.Fatalf("writing output: %s", err)
-		}
+	output := strings.ToLower(*outputPrefix + *typeName +
+		*outputSuffix + ".go")
+	outputPath := filepath.Join(dir, output)
+	if err := ioutil.WriteFile(outputPath, src, 0644); err != nil {
+		log.Fatalf("writing output: %s", err)
 	}
 }

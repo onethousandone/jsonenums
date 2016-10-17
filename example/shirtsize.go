@@ -4,74 +4,45 @@
 
 package main
 
-import (
-	"encoding/json"
-	"fmt"
-	"log"
-	"os"
-	"strings"
-)
-
-//go:generate jsonenums -type=ShirtSize
+//go:generate jsonenums -type=ShirtSize -type-prefix Size -lowercase
 
 type ShirtSize byte
 
 const (
-	NA ShirtSize = iota
-	XS
-	S
-	M
-	L
-	XL
+	SizeNA ShirtSize = iota
+	SizeXS
+	SizeS
+	SizeM
+	SizeL
+	SizeXL
 )
 
-//go:generate jsonenums -type=WeekDay
+//go:generate jsonenums -type=WeekDay -type-prefix Day -lowercase
 
 type WeekDay int
 
 const (
-	Monday WeekDay = iota
-	Tuesday
-	Wednesday
-	Thursday
-	Friday
-	Saturday
-	Sunday
+	DayMonday WeekDay = iota
+	DayTuesday
+	DayWednesday
+	DayThursday
+	DayFriday
+	DaySaturday
+	DaySunday
 )
 
-func (d WeekDay) String() string {
-	switch d {
-	case Monday:
-		return "Dilluns"
-	case Tuesday:
-		return "Dimarts"
-	case Wednesday:
-		return "Dimecres"
-	case Thursday:
-		return "Dijous"
-	case Friday:
-		return "Divendres"
-	case Saturday:
-		return "Dissabte"
-	case Sunday:
-		return "Diumenge"
-	default:
-		return "invalid WeekDay"
-	}
-}
-
-func main() {
-	v := struct {
-		Size ShirtSize
-		Day  WeekDay
-	}{M, Friday}
-	if err := json.NewEncoder(os.Stdout).Encode(v); err != nil {
-		log.Fatal(err)
-	}
-
-	input := `{"Size":"XL", "Day":"Dimarts"}`
-	if err := json.NewDecoder(strings.NewReader(input)).Decode(&v); err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("decoded %s as %+v\n", input, v)
-}
+// func main() {
+//     v := struct {
+//         Size ShirtSize
+//         Day  WeekDay
+//     }{SizeM, DayFriday}
+//     if err := json.NewEncoder(os.Stdout).Encode(v); err != nil {
+//         log.Fatal(err)
+//     }
+//
+//     input := `{"Size":"xl", "Day":"Dimarts"}`
+//     if err := json.NewDecoder(strings.NewReader(input)).Decode(&v); err != nil {
+//         log.Fatal(err)
+//     }
+//     fmt.Printf("decoded %s as %+v\n", input, v)
+// }

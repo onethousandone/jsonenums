@@ -52,7 +52,7 @@ func ParsePackage(directory string) (*Package, error) {
 }
 
 // generate produces the String method for the named type.
-func (pkg *Package) ValuesOfType(typeName string) ([]string, error) {
+func (pkg *Package) ValuesOfType(typeName string, prefix string, toLower bool) ([]string, error) {
 	var values, inspectErrs []string
 	for _, file := range pkg.files {
 		ast.Inspect(file, func(node ast.Node) bool {
@@ -65,7 +65,9 @@ func (pkg *Package) ValuesOfType(typeName string) ([]string, error) {
 			if vs, err := pkg.valuesOfTypeIn(typeName, decl); err != nil {
 				inspectErrs = append(inspectErrs, err.Error())
 			} else {
-				values = append(values, vs...)
+				for _, v := range vs {
+					values = append(values, v)
+				}
 			}
 			return false
 		})
